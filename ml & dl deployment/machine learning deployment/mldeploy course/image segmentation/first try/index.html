@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>image segmentation</title>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"> </script>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@1.0.0"> </script> 
+	<script src="webcam.js"></script>
+</head>
+<body>
+	<div>
+		<div>
+			<video autoplay playsinline muted id="wc" width="224" height="224"></video>
+		</div>
+	</div>
+	<button type="button" id="startPredicting" onclick="startPredicting()" >Start Predicting</button>
+	<button type="button" id="stopPredicting" onclick="stopPredicting()" >Stop Predicting</button>
+	<div id="output" style="font-family:courier;font-size:24px;height=300px"></div>
+
+</body>
+
+<script>
+	let isPredicting = false;
+	let model;
+	const webcam = new Webcam(document.getElementById('wc'));
+
+	/*async function LoadMobilenet(){
+		const mobilenet = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json');
+		return tf.model({inputs: mobilenet.inputs , outputs: mobilenet.outputs})
+	}*/
+
+	function startPredicting(){
+		isPredicting = true;
+		predict();
+	}
+
+	function stopPredicting(){
+		isPredicting = false;
+		predict();
+	}
+
+	async function predict(){
+		while(isPredicting){
+			const img = webcam.capture();
+			const outp = document.getElementById('output');
+			mobilenet.load().then(model => {
+				model.classify(img).then(predictions => {
+					console.log(predictions);
+					for(var i = 0 ; i < predictions.length ; i++){
+						outp.innerHTML += "<br/>" + predictions[i].className + ":" + predictions[i].probability;
+					}
+				});
+			});
+			await tf.nextFrame();
+		}
+	}
+
+	async function init(){
+		await webcam.setup();
+		tf.tidy(() => predict(webcam.capture()));
+	}
+
+	init();
+</script>
+</html>
